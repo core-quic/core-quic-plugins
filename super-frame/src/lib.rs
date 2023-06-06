@@ -29,7 +29,8 @@ lazy_static! {
 // Initialize the plugin.
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
-    match penv.register(Registration::Frame(FrameRegistration::new(SF_FRAME_TYPE, FrameSendOrder::AfterACK, FrameSendKind::OncePerPacket, true, true))) {
+    penv.print("Registering the SUPER frame...");
+    match penv.register(Registration::Frame(FrameRegistration::new(SF_FRAME_TYPE, FrameSendOrder::First, FrameSendKind::OncePerPacket, true, true))) {
         Ok(()) => 0,
         _ => -1,
     }
