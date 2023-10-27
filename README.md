@@ -8,19 +8,23 @@ This is a work in progress!
 All the plugins are listed in alphabetical order.
 
 ### Functional
-
+* `max-data`: simply rewrite processing of max-data
+* `super-frame`: a dummy frame sent once per RTT (caution, no transport parameter negotiation yet!)
+* `privacy-padding`: force a specific sending pattern of packets having the same size
 
 ### Under development
-* `max-data`: simply rewrite processing of max-data
+* `logger`: Log data in a file.
+
 
 ## Compiling plugins
 
 When you want to compile a plugin, go to the root of the related plugin.
 Then, you can compile it with the following commands.
 ```bash
-cargo build --target wasm32-unknown-unknown --release
-wasm-gc target/wasm32-unknown-unknown/release/plugin_name.wasm plugin_name.wasm
+wasm-pack build --release
+cp pkg/plugin_name_bg.wasm plugin_name.wasm
 ```
+See the `generate_wasms.sh` file.
 
 ## Creating your own plugin
 
@@ -34,10 +38,14 @@ Then you need to add the following lines to the generated `Cargo.toml` file.
 ```toml
 [dependencies]
 pluginop-wasm = { path = "relative/path/to/pluginop-wasm" }
+wasm-bindgen = "0.2"
 
 # Indicate that we need to generate a WASM file, otherwise not WASM would be generated at compilation.
 [lib]
 crate-type =["cdylib"]
+
+[profile.release]
+lto = true
 ```
 
 Note that at some point, `pluginop-wasm` will be published on `crates.io`, and adding this dependency would be done simply using, e.g., `pluginop-wasm = "1"`.

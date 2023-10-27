@@ -5,13 +5,13 @@ fi
 
 for i in $PLUGINS; do
 pushd $i
-cargo build --target wasm32-unknown-unknown --release
+wasm-pack build --release
 echo $i
 stripped="${i%/}"
 fixed="${stripped//-/_}"
-v="target/wasm32-unknown-unknown/release/${fixed}.wasm"
+v="pkg/${fixed}_bg.wasm"
 echo $v
-wasm-gc $v "${fixed}".wasm
+cp $v "${fixed}".wasm
 cargo clean
 popd
 done
