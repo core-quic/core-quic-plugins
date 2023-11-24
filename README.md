@@ -11,9 +11,11 @@ All the plugins are listed in alphabetical order.
 * `max-data`: simply rewrite processing of max-data
 * `super-frame`: a dummy frame sent once per RTT (caution, no transport parameter negotiation yet!)
 * `privacy-padding`: force a specific sending pattern of packets having the same size
+* `logger`: Log data in a file.
+* `probe-path`: from the application, request sending path challenge and get delay for path response
 
 ### Under development
-* `logger`: Log data in a file.
+* `ack-frequency`: control minimal time before sending ACK. Basic works, but frames not implemented yet.
 
 
 ## Compiling plugins
