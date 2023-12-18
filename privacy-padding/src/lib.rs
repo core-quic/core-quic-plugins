@@ -1,4 +1,4 @@
-use pluginop_wasm::{PluginEnv, PluginCell, UnixInstant, Duration, quic::{QVal, ConnectionField, Registration, Frame, PaddingFrame, FrameSendKind, FrameSendOrder, FrameRegistration, PacketType}};
+use pluginop_wasm::{PluginEnv, PluginCell, UnixInstant, Duration, quic::{QVal, ConnectionField, Registration, Frame, PaddingFrame, FrameSendKind, FrameSendOrder, FrameRegistration, PacketType}, Bytes};
 use lazy_static::lazy_static;
 
 // #[derive(Debug)]
@@ -27,7 +27,7 @@ lazy_static! {
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
     // Trick here.
-    match penv.register(Registration::Frame(FrameRegistration::new(0xaaaa, FrameSendOrder::AfterACK, FrameSendKind::OncePerPacket, false, true))) {
+    match penv.register(Registration::Frame(FrameRegistration::new(0xaaaa, FrameSendOrder::First, FrameSendKind::OncePerPacket, false, true))) {
         Ok(()) => {},
         _ => return -1,
     };
@@ -113,13 +113,48 @@ pub extern fn prepare_frame_0(penv: &mut PluginEnv) -> i64 {
 }
 
 #[no_mangle]
+pub extern fn wire_len_0(penv: &mut PluginEnv) -> i64 {
+    let p = match penv.get_input::<QVal>(0) {
+        Ok(QVal::Frame(Frame::Padding(p))) => p,
+        _ => return -2,
+    };
+    match penv.save_output((p.length as usize).into()) {
+        Ok(()) => 0,
+        _ => -1,
+    }
+}
+
+#[no_mangle]
+pub extern fn write_frame_0(penv: &mut PluginEnv) -> i64 {
+    let p = match penv.get_input::<QVal>(0) {
+        Ok(QVal::Frame(Frame::Padding(p))) => p,
+        _ => return -2,
+    };
+    let bytes = match penv.get_input::<Bytes>(1) {
+        Ok(b) => b,
+        _ => return -3,
+    };
+    // TODO: check if there is at least 3 bytes.
+    let frame_bytes: Vec<u8> = vec![0x00; p.length as usize];
+    match penv.put_bytes(bytes.tag, &frame_bytes) {
+        Ok(v) if v == p.length as usize => {},
+        _ => return -4,
+    };
+    match penv.save_output(frame_bytes.len().into()) {
+        Ok(()) => 0,
+        _ => -1,
+    }
+}
+
+
+#[no_mangle]
 pub extern fn prepare_frame_aaaa(_penv: &mut PluginEnv) -> i64 {
     // Specific error code to stop the sending processing.
     return -1000;
 }
 
 #[no_mangle]
-pub extern fn on_plugin_timeout_7(_: &mut PluginEnv) -> i64 {
+pub extern fn on_plugin_timeout_7(_penv: &mut PluginEnv) -> i64 {
     PLUGIN_DATA.get_mut().stop_sending = false;
     0
 }

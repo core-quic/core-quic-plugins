@@ -39,15 +39,12 @@ pub extern fn decode_transport_parameter_ff04de1b(penv: &mut PluginEnv) -> i64 {
     };
     let mut new = vec![0; 8 - min_af.len()];
     new.extend(min_af);
-    penv.print(&format!("AF got val {:x?}", new));
     PLUGIN_DATA.get_mut().min_ack = Some(Duration::from_micros(u64::from_be_bytes(new.try_into().unwrap())));
-    penv.print(&format!("AF WORKS! Got value {:?}", PLUGIN_DATA.min_ack));
     0
 }
 
 #[no_mangle]
 pub extern fn write_transport_parameter_ff04de1b(penv: &mut PluginEnv) -> i64 {
-    penv.print("CALLED TO WRITE!");
     let bytes = match penv.get_input::<Bytes>(0) {
         Ok(b) => b,
         _ => return -1,
@@ -59,7 +56,6 @@ pub extern fn write_transport_parameter_ff04de1b(penv: &mut PluginEnv) -> i64 {
         Ok(11) => {},
         _ => return -4,
     };
-    penv.print("WRITE OK");
     0
 }
 
@@ -67,7 +63,6 @@ pub extern fn write_transport_parameter_ff04de1b(penv: &mut PluginEnv) -> i64 {
 pub extern fn should_send_frame_2(penv: &mut PluginEnv) -> i64 {
     // Such a behavior could be improved by avoiding loading this operation
     // if the negotiation failed.
-    penv.print("CHECK should send ack!");
     // Always assume path is active.
     let now = match penv.get_input::<UnixInstant>(4) {
         Ok(n) => n,
@@ -93,16 +88,13 @@ pub extern fn should_send_frame_2(penv: &mut PluginEnv) -> i64 {
         Ok(b) => b,
         _ => return -2,
     };
-    penv.print("Going to evaluate");
     let out = if let (Some(min_af), Some(last)) = (PLUGIN_DATA.min_ack.as_ref(), PLUGIN_DATA.last_sent.as_ref()) {
-        penv.print("Entering if");
         if *last + *min_af <= now {
             need_ack_len &&
             ack_elicited &&
             (!is_closing ||
                 pkt_type == PacketType::Handshake)
         } else {
-            penv.print("FALSE");
             false
         }
     } else {
@@ -111,9 +103,7 @@ pub extern fn should_send_frame_2(penv: &mut PluginEnv) -> i64 {
             (!is_closing ||
                 pkt_type == PacketType::Handshake)
     };
-    penv.print("YAY");
     if out {
-        penv.print("TRUE");
         PLUGIN_DATA.get_mut().last_sent = Some(now);
     }
     match penv.save_output(out.into()) {
@@ -122,3 +112,10 @@ pub extern fn should_send_frame_2(penv: &mut PluginEnv) -> i64 {
     }
 }
 
+#[no_mangle]
+pub extern fn should_send_frame_af(penv: &mut PluginEnv) -> i64 {
+    match penv.save_output(false.into()) {
+        Ok(()) => 0,
+        Err(_) => -6,
+    }
+}

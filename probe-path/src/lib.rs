@@ -1,4 +1,4 @@
-use pluginop_wasm::{PluginEnv, PluginCell, quic::{FrameRegistration, FrameSendOrder, FrameSendKind, QVal, PacketType, Frame, PathChallengeFrame}, UnixInstant};
+use pluginop_wasm::{Bytes, PluginEnv, PluginCell, quic::{FrameRegistration, FrameSendOrder, FrameSendKind, QVal, PacketType, Frame, PathChallengeFrame}, UnixInstant};
 use lazy_static::lazy_static;
 
 struct PluginData {
@@ -51,6 +51,29 @@ pub extern fn prepare_frame_1a(penv: &mut PluginEnv) -> i64 {
     })).into()) {
         Ok(()) => 0,
         Err(_) => -1,
+    }
+}
+
+#[no_mangle]
+pub extern fn write_frame_1a(penv: &mut PluginEnv) -> i64 {
+    let pc_frame = match penv.get_input::<QVal>(0) {
+        Ok(QVal::Frame(Frame::PathChallenge(pc))) => pc,
+        _ => return -1,
+    };
+    let bytes = match penv.get_input::<Bytes>(1) {
+        Ok(b) => b,
+        _ => return -3,
+    };
+    // TODO: check if there is at least 3 bytes.
+    let mut frame_bytes: Vec<u8> = vec![0x1a];
+    frame_bytes.extend_from_slice(&pc_frame.data.to_be_bytes());
+    match penv.put_bytes(bytes.tag, &frame_bytes) {
+        Ok(9) => {},
+        _ => return -4,
+    };
+    match penv.save_output(frame_bytes.len().into()) {
+        Ok(()) => 0,
+        _ => -5,
     }
 }
 
