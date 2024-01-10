@@ -26,6 +26,7 @@ lazy_static! {
 // Initialize the plugin.
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
+    penv.enable();
     // Trick here.
     match penv.register(Registration::Frame(FrameRegistration::new(0xaaaa, FrameSendOrder::First, FrameSendKind::OncePerPacket, false, true))) {
         Ok(()) => {},

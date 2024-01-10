@@ -29,11 +29,39 @@ lazy_static! {
 // Initialize the plugin.
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
-    penv.print("Registering the SUPER frame...");
+    match penv.register(Registration::TransportParameter(0xAAAAAAAA)) {
+        Ok(()) => (),
+        _ => return -2,
+    };
     match penv.register(Registration::Frame(FrameRegistration::new(SF_FRAME_TYPE, FrameSendOrder::First, FrameSendKind::OncePerPacket, true, true))) {
         Ok(()) => 0,
         _ => -1,
     }
+}
+
+// Need to negotiate the SUPER frame...
+// TODO TODO TODO
+#[no_mangle]
+pub extern fn decode_transport_parameter_aaaaaaaa(penv: &mut PluginEnv) -> i64 {
+    // This is a zero-length TP. We just got it.
+    penv.enable();
+    0
+}
+
+#[no_mangle]
+pub extern fn write_transport_parameter_aaaaaaaa(penv: &mut PluginEnv) -> i64 {
+    let bytes = match penv.get_input::<Bytes>(0) {
+        Ok(b) => b,
+        _ => return -1,
+    };
+    // TODO: check if there is at least 3 bytes.
+    // TODO: let's force 10 ms.
+    let tp_bytes: [u8; 9] = [0xc0, 0x00, 0x00, 0x00, 0xaa, 0xaa, 0xaa, 0xaa, 0x00];
+    match penv.put_bytes(bytes.tag, &tp_bytes) {
+        Ok(9) => {},
+        _ => return -4,
+    };
+    0
 }
 
 // This function determines if there are plugin frames that must be

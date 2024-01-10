@@ -17,6 +17,7 @@ lazy_static! {
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
     penv.print("Initializing logger plugin");
+    penv.enable();
     let role = if let Ok(v) = penv.get_connection(ConnectionField::IsServer) {
         match v {
             true => "server",

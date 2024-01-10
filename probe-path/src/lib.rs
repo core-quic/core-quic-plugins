@@ -13,6 +13,7 @@ lazy_static! {
 // Initialize the plugin.
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
+    penv.enable();
     match penv.register(pluginop_wasm::quic::Registration::Frame(FrameRegistration::new(0x1a, FrameSendOrder::AfterACK, FrameSendKind::OncePerPacket, false, true))) {
         Ok(()) => 0,
         Err(_) => -1,

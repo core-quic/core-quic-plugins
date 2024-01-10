@@ -40,6 +40,7 @@ pub extern fn decode_transport_parameter_ff04de1b(penv: &mut PluginEnv) -> i64 {
     let mut new = vec![0; 8 - min_af.len()];
     new.extend(min_af);
     PLUGIN_DATA.get_mut().min_ack = Some(Duration::from_micros(u64::from_be_bytes(new.try_into().unwrap())));
+    penv.enable();
     0
 }
 
