@@ -167,6 +167,9 @@ pub extern fn process_frame_bd(penv: &mut PluginEnv) -> i64 {
     if let Err(_) = penv.set_recovery(RecoveryField::CongestionWindow, PLUGIN_DATA.cwin_to_set as usize) {
         return -1;
     }
+    if let Err(_) = penv.set_recovery(RecoveryField::Ssthresh, PLUGIN_DATA.cwin_to_set as usize) {
+        return -2;
+    }
     penv.print(&format!("Successfully set CWIN to {}", PLUGIN_DATA.cwin_to_set));
     0
 }
