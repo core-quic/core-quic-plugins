@@ -21,7 +21,7 @@ const BD_FRAME_TYPE: u64 = 0xBD;
 lazy_static! {
     static ref PLUGIN_DATA: PluginCell<PluginData> = PluginCell::new(PluginData {
         should_send: false,
-        previous_cwin: 2000000,
+        previous_cwin: 3000000,
         cwin_to_set: 0,
     });
 }
