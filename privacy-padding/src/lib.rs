@@ -9,6 +9,7 @@ use lazy_static::lazy_static;
 #[derive(Debug)]
 struct PluginData {
     stop_sending: bool,
+    rng: Option<fastrand::Rng>,
     // in_flight: bool,
     // tag_count: u64,
     // frames: HashMap<u64, FrameData>,
@@ -17,6 +18,7 @@ struct PluginData {
 lazy_static! {
     static ref PLUGIN_DATA: PluginCell<PluginData> = PluginCell::new(PluginData {
         stop_sending: false,
+        rng: None,
         // in_flight: false,
         // tag_count: 0,
         // frames: HashMap::new(),
@@ -26,6 +28,11 @@ lazy_static! {
 // Initialize the plugin.
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {
+    let now = match penv.get_unix_instant() {
+        Ok(n) => n.secs() + n.subsec_nanos() as u64,
+        Err(_) => return -1,
+    };
+    PLUGIN_DATA.get_mut().rng = Some(fastrand::Rng::with_seed(now));
     penv.enable();
     // Trick here.
     match penv.register(Registration::Frame(FrameRegistration::new(0xaaaa, FrameSendOrder::First, FrameSendKind::OncePerPacket, false, true))) {
@@ -59,10 +66,11 @@ pub extern fn should_send_frame_0(penv: &mut PluginEnv) -> i64 {
         _ => return -5,
     };
     // Let suspend the sending if we are too early. This is done by calling prepare frame and giving an error.
-    let out = pkt_type == PacketType::Short && established && left > 0;
+    let out = left > 0;
     if pkt_type == PacketType::Short && established {
         PLUGIN_DATA.get_mut().stop_sending = true;
-        let next_sending = now + Duration::from_millis(20);
+        let pause = PLUGIN_DATA.get_mut().rng.as_mut().unwrap().u64(..10000);
+        let next_sending = now + Duration::from_micros(pause);
         if penv.set_timer(next_sending, 1, 7).is_err() {
             return -6;
         }

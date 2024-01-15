@@ -10,6 +10,7 @@ crate-type =["cdylib"]
 pluginop-wasm = { path = "../../pluginop/wasm" }
 lazy_static = "1"
 wasm-bindgen = "0.2"
+fastrand = "2.0.1"
 
 [profile.release]
 lto = true
