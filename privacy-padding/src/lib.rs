@@ -10,6 +10,7 @@ use lazy_static::lazy_static;
 struct PluginData {
     stop_sending: bool,
     rng: Option<fastrand::Rng>,
+    enable: bool,
     // in_flight: bool,
     // tag_count: u64,
     // frames: HashMap<u64, FrameData>,
@@ -19,6 +20,7 @@ lazy_static! {
     static ref PLUGIN_DATA: PluginCell<PluginData> = PluginCell::new(PluginData {
         stop_sending: false,
         rng: None,
+        enable: true,
         // in_flight: false,
         // tag_count: 0,
         // frames: HashMap::new(),
@@ -66,7 +68,7 @@ pub extern fn should_send_frame_0(penv: &mut PluginEnv) -> i64 {
         _ => return -5,
     };
     // Let suspend the sending if we are too early. This is done by calling prepare frame and giving an error.
-    let out = left > 0;
+    let out = left > 0 && (pkt_type != PacketType::Short || PLUGIN_DATA.enable);
     if pkt_type == PacketType::Short && established {
         PLUGIN_DATA.get_mut().stop_sending = true;
         let pause = PLUGIN_DATA.get_mut().rng.as_mut().unwrap().u64(..10000);
@@ -83,7 +85,7 @@ pub extern fn should_send_frame_0(penv: &mut PluginEnv) -> i64 {
 
 #[no_mangle]
 pub extern fn should_send_frame_aaaa(penv: &mut PluginEnv) -> i64 {
-    match penv.save_output(PLUGIN_DATA.stop_sending.into()) {
+    match penv.save_output((PLUGIN_DATA.enable && PLUGIN_DATA.stop_sending).into()) {
         Ok(()) => 0,
         Err(_) => -4,
     }
@@ -165,5 +167,15 @@ pub extern fn prepare_frame_aaaa(_penv: &mut PluginEnv) -> i64 {
 #[no_mangle]
 pub extern fn on_plugin_timeout_7(_penv: &mut PluginEnv) -> i64 {
     PLUGIN_DATA.get_mut().stop_sending = false;
+    0
+}
+
+#[no_mangle]
+pub extern fn plugin_control_80001(penv: &mut PluginEnv) -> i64 {
+    let enable = match penv.get_input::<bool>(0) {
+        Ok(n) => n,
+        _ => return -2,
+    };
+    PLUGIN_DATA.get_mut().enable = enable;
     0
 }

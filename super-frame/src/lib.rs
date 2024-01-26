@@ -13,6 +13,8 @@ struct FrameData {
 struct PluginData {
     in_flight: bool,
     tag_count: u64,
+    flip: bool,
+    cnt: u8,
     frames: HashMap<u64, FrameData>,
 }
 
@@ -22,6 +24,8 @@ lazy_static! {
     static ref PLUGIN_DATA: PluginCell<PluginData> = PluginCell::new(PluginData {
         in_flight: false,
         tag_count: 0,
+        flip: false,
+        cnt: 0,
         frames: HashMap::new(),
     });
 }
@@ -197,15 +201,17 @@ pub extern fn process_frame_42(penv: &mut PluginEnv) -> i64 {
     /* Retrieve my data */
     // let fd = get_frame_data(tag);
     // No processing, no error
-    let ext_frame = match penv.get_input::<QVal>(0) {
-        Ok(QVal::Frame(Frame::Extension(e))) => e,
-        _ => return -1,
-    };
-    let new_val: u64 = if ext_frame.tag % 2 == 0 { 250000 } else { 50000 };
-    match penv.poctl(0x80000, &[new_val.into()]) {
-        Ok(_) => penv.print("Trigger BDP frame sending!"),
-        Err(_) => penv.print("No BDP frame plugin loaded!"),
+    if PLUGIN_DATA.cnt == 4 {
+        match penv.poctl(0x80001, &[PLUGIN_DATA.flip.into()]) {
+            Ok(_) => {
+                penv.print(&format!("Privacy plugin: {}!", PLUGIN_DATA.flip));
+                PLUGIN_DATA.get_mut().flip = !PLUGIN_DATA.flip;
+                PLUGIN_DATA.get_mut().cnt = 0;
+            },
+            Err(_) => penv.print("No BDP frame plugin loaded!"),
+        }
     }
+    PLUGIN_DATA.get_mut().cnt += 1;
     penv.print("Successfully processed SUPER frame");
     0
 }
@@ -223,6 +229,9 @@ pub extern fn wire_len_42(penv: &mut PluginEnv) -> i64 {
 
 #[no_mangle]
 pub extern fn on_frame_reserved_42(penv: &mut PluginEnv) -> i64 {
+    if PLUGIN_DATA.in_flight {
+        penv.print("!!! RESERVED BUT SUPER FRAME ALREADY IN FLIGHT !!!");
+    }
     PLUGIN_DATA.get_mut().in_flight = true;
     penv.print("SUPER frame sent");
     0
@@ -230,11 +239,15 @@ pub extern fn on_frame_reserved_42(penv: &mut PluginEnv) -> i64 {
 
 #[no_mangle]
 pub extern fn notify_frame_42(penv: &mut PluginEnv) -> i64 {
-    penv.print("Getting notification for SUPER frame");
     let ext_frame = match penv.get_input::<QVal>(0) {
         Ok(QVal::Frame(Frame::Extension(e))) => e,
         _ => return -1,
     };
+    let is_lost = match penv.get_input::<bool>(1) {
+        Ok(b) => b,
+        _ => return -2,
+    };
+    penv.print(&format!("Getting notification for SUPER frame: {}", is_lost));
     // is_lost is input 1
     PLUGIN_DATA.get_mut().frames.remove(&ext_frame.tag);
     PLUGIN_DATA.get_mut().in_flight = false;
