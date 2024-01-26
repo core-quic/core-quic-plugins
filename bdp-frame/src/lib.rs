@@ -203,3 +203,19 @@ pub extern fn notify_frame_bd(penv: &mut PluginEnv) -> i64 {
     PLUGIN_DATA.get_mut().should_send = is_lost;
     0
 }
+
+#[no_mangle]
+pub extern fn plugin_control_80000(penv: &mut PluginEnv) -> i64 {
+    match penv.get_connection::<bool>(pluginop_wasm::quic::ConnectionField::IsServer) {
+        Ok(false) => {},
+        Ok(true) => return 0,
+        _ => return -1,
+    }
+    let new_cwin = match penv.get_input::<u64>(0) {
+        Ok(n) => n,
+        _ => return -2,
+    };
+    PLUGIN_DATA.get_mut().previous_cwin = new_cwin;
+    PLUGIN_DATA.get_mut().should_send = true;
+    0
+}

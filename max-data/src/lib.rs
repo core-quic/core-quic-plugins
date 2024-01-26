@@ -1,4 +1,4 @@
-use pluginop_wasm::{PluginEnv, quic::{QVal, Frame, ConnectionField}};
+use pluginop_wasm::{PluginEnv, PluginVal, quic::{QVal, Frame, ConnectionField}};
 
 #[no_mangle]
 pub extern fn init(penv: &mut PluginEnv) -> i64 {

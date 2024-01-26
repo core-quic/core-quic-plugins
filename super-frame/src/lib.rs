@@ -197,6 +197,15 @@ pub extern fn process_frame_42(penv: &mut PluginEnv) -> i64 {
     /* Retrieve my data */
     // let fd = get_frame_data(tag);
     // No processing, no error
+    let ext_frame = match penv.get_input::<QVal>(0) {
+        Ok(QVal::Frame(Frame::Extension(e))) => e,
+        _ => return -1,
+    };
+    let new_val: u64 = if ext_frame.tag % 2 == 0 { 250000 } else { 50000 };
+    match penv.poctl(0x80000, &[new_val.into()]) {
+        Ok(_) => penv.print("Trigger BDP frame sending!"),
+        Err(_) => penv.print("No BDP frame plugin loaded!"),
+    }
     penv.print("Successfully processed SUPER frame");
     0
 }
