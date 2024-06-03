@@ -7,7 +7,7 @@ edition = "2021"
 crate-type =["cdylib"]
 
 [dependencies]
-pluginop-wasm = { path = "../../pluginop/wasm" }
+pluginop-wasm = "0.1"
 lazy_static = "1"
 wasm-bindgen = "0.2"
 

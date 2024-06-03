@@ -10,7 +10,7 @@ crate-type =["cdylib"]
 lto = true
 
 [dependencies]
-pluginop-wasm = { path = "../../pluginop/wasm" }
+pluginop-wasm = "0.1"
 lazy_static = "1"
 wee_alloc = "0.4.5"
 wasm-bindgen = "0.2"

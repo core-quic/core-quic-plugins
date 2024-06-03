@@ -166,6 +166,8 @@ checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
 [[package]]
 name = "pluginop-common"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2669e6f67e3d6ce5035d3e9c5407ffcd2c410fa39ed2c35b0a4131ccdc3bfc40"
 dependencies = [
  "serde",
  "unix-time",
@@ -174,6 +176,8 @@ dependencies = [
 [[package]]
 name = "pluginop-wasm"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8cba5f19dbdbd37b1ba510733b0df326f9f9f6e0547caaf70ff861190ea3579"
 dependencies = [
  "pluginop-common",
  "postcard",
