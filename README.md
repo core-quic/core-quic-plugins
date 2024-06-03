@@ -15,9 +15,6 @@ All the plugins are listed in alphabetical order.
 * `probe-path`: from the application, request sending path challenge and get delay for path response
 * `bdp-frame`: resume the congestion control state of a previous connection
 
-### Under development
-* `ack-frequency`: control minimal time before sending ACK. Basic works, but frames not implemented yet.
-
 
 ## Compiling plugins
 
