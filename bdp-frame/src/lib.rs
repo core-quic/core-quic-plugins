@@ -1,13 +1,7 @@
 use std::format;
 
-use std::collections::HashMap;
-use pluginop_wasm::{Duration, PluginEnv, PluginCell, Bytes, quic::{QVal, Registration, Frame, ExtensionFrame, FrameSendKind, FrameSendOrder, FrameRegistration, PacketType, RecoveryField}};
+use pluginop_wasm::{PluginEnv, PluginCell, Bytes, quic::{QVal, Registration, Frame, ExtensionFrame, FrameSendKind, FrameSendOrder, FrameRegistration, PacketType, RecoveryField}};
 use lazy_static::lazy_static;
-
-#[derive(Debug)]
-struct FrameData {
-    val: u8,
-}
 
 #[derive(Debug)]
 struct PluginData {
@@ -55,8 +49,7 @@ pub extern fn write_transport_parameter_bf(penv: &mut PluginEnv) -> i64 {
         Ok(b) => b,
         _ => return -1,
     };
-    // TODO: check if there is at least 3 bytes.
-    // TODO: let's force 10 ms.
+    // 3 bytes because this is a varint.
     let tp_bytes: [u8; 3] = [0x40, 0xbf, 0x00];
     match penv.put_bytes(bytes.tag, &tp_bytes) {
         Ok(3) => {},
@@ -68,7 +61,6 @@ pub extern fn write_transport_parameter_bf(penv: &mut PluginEnv) -> i64 {
 // This function determines if there are plugin frames that must be
 // sent now or not.
 #[no_mangle]
-// pub extern fn should_send_frame_42(pkt_type: u32, _epoch: u64, is_closing: i32, _left: u64) -> i64 {
 pub extern fn should_send_frame_bd(penv: &mut PluginEnv) -> i64 {
     let pkt_type = match penv.get_input::<QVal>(0) {
         Ok(QVal::PacketType(pt)) => pt,
@@ -85,14 +77,6 @@ pub extern fn should_send_frame_bd(penv: &mut PluginEnv) -> i64 {
     }
 }
 
-// This function is important, as it determines which (custom) frame
-// should be sent. This is specified as the return value. This function
-// is called if, and only if `should_send_frame` returns `true`.
-//
-// In case no frame should be sent, return u64::MAX.
-//
-// Note that when preparing this frame, a tag must be provided to the
-// host implementation to retrieve the related data.
 #[no_mangle]
 pub extern fn prepare_frame_bd(penv: &mut PluginEnv) -> i64 {
     // We need to save the extension frame.
@@ -109,7 +93,6 @@ pub extern fn write_frame_bd(penv: &mut PluginEnv) -> i64 {
         Ok(b) => b,
         _ => return -3,
     };
-    // TODO: check if there is at least 3 bytes.
     let mut frame_bytes = [0u8; 10];
     frame_bytes[0..2].copy_from_slice(&[0x40, 0xbd]);
     frame_bytes[2..10].copy_from_slice(&PLUGIN_DATA.previous_cwin.to_be_bytes());
@@ -154,7 +137,6 @@ pub extern fn parse_frame_bd(penv: &mut PluginEnv) -> i64 {
     };
     PLUGIN_DATA.get_mut().cwin_to_set = val;
 
-    /* Don't forget this! */
     match penv.save_output(Frame::Extension(ExtensionFrame { frame_type: BD_FRAME_TYPE, tag: 0 }).into()) {
         Ok(()) => 0,
         _ => -3,

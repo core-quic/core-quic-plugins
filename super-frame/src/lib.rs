@@ -43,8 +43,6 @@ pub extern fn init(penv: &mut PluginEnv) -> i64 {
     }
 }
 
-// Need to negotiate the SUPER frame...
-// TODO TODO TODO
 #[no_mangle]
 pub extern fn decode_transport_parameter_aaaaaaaa(penv: &mut PluginEnv) -> i64 {
     // This is a zero-length TP. We just got it.
@@ -58,8 +56,7 @@ pub extern fn write_transport_parameter_aaaaaaaa(penv: &mut PluginEnv) -> i64 {
         Ok(b) => b,
         _ => return -1,
     };
-    // TODO: check if there is at least 3 bytes.
-    // TODO: let's force 10 ms.
+    // We need 9 bytes because the type is a varint.
     let tp_bytes: [u8; 9] = [0xc0, 0x00, 0x00, 0x00, 0xaa, 0xaa, 0xaa, 0xaa, 0x00];
     match penv.put_bytes(bytes.tag, &tp_bytes) {
         Ok(9) => {},
@@ -87,18 +84,6 @@ pub extern fn should_send_frame_42(penv: &mut PluginEnv) -> i64 {
         Err(_) => -3,
     }
 }
-
-// This is just a test to see if we can make PRE works.
-// #[no_mangle]
-// pub extern fn pre_should_send_frame_42(_pkt_type: u32, _epoch: u64, _is_closing: i32, _left: u64) {
-    // print("Hello from pre_should_send_frame_custom");
-// }
-
-// This is just a test to see if we can make POST works.
-// #[no_mangle]
-// pub extern fn post_should_send_frame_42() {
-    // print("Hello from post_should_send_frame_custom");
-// }
 
 // This function is important, as it determines which (custom) frame
 // should be sent. This is specified as the return value. This function
@@ -134,7 +119,7 @@ pub extern fn write_frame_42(penv: &mut PluginEnv) -> i64 {
         Ok(b) => b,
         _ => return -3,
     };
-    // TODO: check if there is at least 3 bytes.
+    // Three bytes because the frame type is a varint.
     let frame_bytes: [u8; 3] = [0x40, 0x42, fd.val];
     match penv.put_bytes(bytes.tag, &frame_bytes) {
         Ok(3) => {},
@@ -198,9 +183,6 @@ pub extern fn parse_frame_42(penv: &mut PluginEnv) -> i64 {
 
 #[no_mangle]
 pub extern fn process_frame_42(penv: &mut PluginEnv) -> i64 {
-    /* Retrieve my data */
-    // let fd = get_frame_data(tag);
-    // No processing, no error
     if PLUGIN_DATA.cnt == 4 {
         match penv.poctl(0x80001, &[PLUGIN_DATA.flip.into()]) {
             Ok(_) => {

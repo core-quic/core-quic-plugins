@@ -1,19 +1,11 @@
 use pluginop_wasm::{PluginEnv, PluginCell, UnixInstant, Duration, quic::{QVal, ConnectionField, Registration, Frame, PaddingFrame, FrameSendKind, FrameSendOrder, FrameRegistration, PacketType}, Bytes};
 use lazy_static::lazy_static;
 
-// #[derive(Debug)]
-// struct FrameData {
-//     val: u8,
-// }
-
 #[derive(Debug)]
 struct PluginData {
     stop_sending: bool,
     rng: Option<fastrand::Rng>,
     enable: bool,
-    // in_flight: bool,
-    // tag_count: u64,
-    // frames: HashMap<u64, FrameData>,
 }
 
 lazy_static! {
@@ -21,9 +13,6 @@ lazy_static! {
         stop_sending: false,
         rng: None,
         enable: true,
-        // in_flight: false,
-        // tag_count: 0,
-        // frames: HashMap::new(),
     });
 }
 
@@ -91,26 +80,6 @@ pub extern fn should_send_frame_aaaa(penv: &mut PluginEnv) -> i64 {
     }
 }
 
-// This is just a test to see if we can make PRE works.
-// #[no_mangle]
-// pub extern fn pre_should_send_frame_42(_pkt_type: u32, _epoch: u64, _is_closing: i32, _left: u64) {
-    // print("Hello from pre_should_send_frame_custom");
-// }
-
-// This is just a test to see if we can make POST works.
-// #[no_mangle]
-// pub extern fn post_should_send_frame_42() {
-    // print("Hello from post_should_send_frame_custom");
-// }
-
-// This function is important, as it determines which (custom) frame
-// should be sent. This is specified as the return value. This function
-// is called if, and only if `should_send_frame` returns `true`.
-//
-// In case no frame should be sent, return u64::MAX (== -1).
-//
-// Note that when preparing this frame, a tag must be provided to the
-// host implementation to retrieve the related data.
 #[no_mangle]
 pub extern fn prepare_frame_0(penv: &mut PluginEnv) -> i64 {
     let left = match penv.get_input::<usize>(1) {

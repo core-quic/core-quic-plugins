@@ -65,7 +65,6 @@ pub extern fn write_frame_1a(penv: &mut PluginEnv) -> i64 {
         Ok(b) => b,
         _ => return -3,
     };
-    // TODO: check if there is at least 3 bytes.
     let mut frame_bytes: Vec<u8> = vec![0x1a];
     frame_bytes.extend_from_slice(&pc_frame.data.to_be_bytes());
     match penv.put_bytes(bytes.tag, &frame_bytes) {
